@@ -27,7 +27,11 @@ app.get('/', (req, res) => {
 // Route to start Twitter OAuth flow
 app.get('/twitter-login', async (req, res) => {
     try {
-        const { url, oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink("https://monsterboard.onrender.com/twitter-callback");
+        const { url, oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink(
+    "https://monsterboard.onrender.com/twitter-callback",
+    { linkMode: 'authorize' }  // Ensures correct flow
+);
+
         res.redirect(url);
     } catch (error) {
         console.error("Error generating Twitter auth link:", error);
