@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { TwitterApi } = require('twitter-api-v2');
 const dotenv = require('dotenv');
+const { ethers } = require('ethers');
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ const port = 3000;
 
 app.use(cors()); // Allow frontend to communicate with backend
 
-// Initialize Twitter client with your app's credentials
+// Initialize Twitter client
 const twitterClient = new TwitterApi({
     clientId: process.env.TWITTER_CLIENT_ID,
     clientSecret: process.env.TWITTER_CLIENT_SECRET,
@@ -19,19 +20,237 @@ const twitterClient = new TwitterApi({
     accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
 });
 
-// Root route for the homepage
+// Blockchain setup
+const provider = new ethers.JsonRpcProvider('https://rpc.testnet.monad.xyz');
+const contractAddress = "0x1fA8743516535BD2966B2cEC12Cf0f82E3E5566d";
+const contractABI = [
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "twitterHandle",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			}
+		],
+		"name": "LeaderboardUpdated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "twitterHandle",
+				"type": "string"
+			}
+		],
+		"name": "setTwitterHandle",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "twitterHandle",
+				"type": "string"
+			}
+		],
+		"name": "TwitterHandleSet",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "updateLeaderboard",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getLeaderboard",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "twitterHandle",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "balance",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct MONsterBoard.LeaderboardEntry[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getUserRank",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "leaderboard",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "twitterHandle",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "leaderboardRefreshInterval",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "userBalances",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "userLastClaimed",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "userTwitterHandles",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+// Root route
 app.get('/', (req, res) => {
     res.send('Welcome to the Twitter OAuth App! Please connect your Twitter account.');
 });
 
-// Route to start Twitter OAuth flow
+// Twitter OAuth flow
 app.get('/twitter-login', async (req, res) => {
     try {
-        const { url, oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink(
-    "https://monsterboard.onrender.com/twitter-callback",
-    { linkMode: 'authorize' }  // Ensures correct flow
-);
-
+        const { url } = await twitterClient.generateAuthLink(
+            "https://monsterboard.onrender.com/twitter-callback",
+            { linkMode: 'authorize' }
+        );
         res.redirect(url);
     } catch (error) {
         console.error("Error generating Twitter auth link:", error);
@@ -39,7 +258,7 @@ app.get('/twitter-login', async (req, res) => {
     }
 });
 
-// Twitter OAuth callback route
+// Twitter callback
 app.get('/twitter-callback', async (req, res) => {
     const { oauth_token, oauth_verifier } = req.query;
 
@@ -48,18 +267,26 @@ app.get('/twitter-callback', async (req, res) => {
     }
 
     try {
-        // Exchange oauth_token and oauth_verifier for access token
-        const { client: loggedInClient, accessToken, accessSecret } = await twitterClient.loginWithOAuth1(oauth_token, oauth_verifier);
-        
-        // Get user details (including username)
+        const { client: loggedInClient } = await twitterClient.loginWithOAuth1(oauth_token, oauth_verifier);
         const user = await loggedInClient.v2.me();
-        const twitterHandle = user.username;  // This is the Twitter handle
+        const twitterHandle = user.username;
 
-        // Redirect the user back to your frontend, passing the Twitter handle
         res.redirect(`https://monsterboard.onrender.com/?twitterHandle=${twitterHandle}`);
     } catch (error) {
         console.error('Error during Twitter OAuth callback:', error);
         res.status(500).send('Error during Twitter authentication');
+    }
+});
+
+// Fetch MON balance
+app.get('/get-balance/:wallet', async (req, res) => {
+    try {
+        const walletAddress = req.params.wallet;
+        const balance = await contract.balanceOf(walletAddress);
+        res.json({ wallet: walletAddress, balance: balance.toString() });
+    } catch (error) {
+        console.error('Error fetching balance:', error);
+        res.status(500).send('Error fetching balance');
     }
 });
 
