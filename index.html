@@ -3,318 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MONster Board</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <title>MONster Board - Leaderboard</title>
     <style>
-        body { background-color: #1e0127; color: white; font-family: Arial, sans-serif; text-align: center; }
-        button { background-color: #732d91; color: white; border: none; padding: 10px 20px; cursor: pointer; margin: 10px; }
-        button:hover { background-color: #5a2170; }
-        #leaderboard { margin-top: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #1e0127;
+            color: white;
+            padding: 20px;
+        }
+        h1 {
+            color: #732d91;
+        }
+        button {
+            background-color: #732d91;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #5a2170;
+        }
+        #user-info {
+            margin-top: 30px;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>MONster Board</h1>
-    <p>Leaderboard for MON token holders</p>
-    <button id="connectWalletButton">Connect Wallet</button>
-    <button id="connectTwitterButton" style="display: none;">Connect Twitter</button>
-    <p id="rankDisplay">Connect your wallet to participate!</p>
-    <div id="leaderboard"></div>
+    <h1>MONster Board Leaderboard</h1>
+    <p>Connect your Twitter account to see your rank!</p>
+
+    <button id="twitter-login">Login with Twitter</button>
+
+    <div id="user-info" style="display: none;">
+        <p>Welcome, <span id="twitter-handle"></span>!</p>
+    </div>
 
     <script>
-    const contractAddress = "0x1fA8743516535BD2966B2cEC12Cf0f82E3E5566d";
-    const contractABI = [
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "twitterHandle",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "balance",
-				"type": "uint256"
-			}
-		],
-		"name": "LeaderboardUpdated",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "twitterHandle",
-				"type": "string"
-			}
-		],
-		"name": "setTwitterHandle",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "twitterHandle",
-				"type": "string"
-			}
-		],
-		"name": "TwitterHandleSet",
-		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "updateLeaderboard",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getLeaderboard",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "user",
-						"type": "address"
-					},
-					{
-						"internalType": "string",
-						"name": "twitterHandle",
-						"type": "string"
-					},
-					{
-						"internalType": "uint256",
-						"name": "balance",
-						"type": "uint256"
-					}
-				],
-				"internalType": "struct MONsterBoard.LeaderboardEntry[]",
-				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			}
-		],
-		"name": "getUserRank",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "leaderboard",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "twitterHandle",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "balance",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "leaderboardRefreshInterval",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "userBalances",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "userLastClaimed",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "userTwitterHandles",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-];
-
-    let provider, signer, contract, userAddress, twitterHandle;
-
-    async function connectWallet() {
-        if (window.ethereum) {
-            try {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                userAddress = await signer.getAddress();
-                contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-                document.getElementById("connectTwitterButton").style.display = "block";
-                await updateUserRank();
-            } catch (error) {
-                console.error("Wallet connection failed:", error);
-                alert("Wallet connection failed!");
-            }
-        } else {
-            alert("Please install MetaMask!");
-        }
-    }
-
-    async function connectTwitter() {
-        try {
+        document.getElementById("twitter-login").addEventListener("click", function () {
             window.location.href = "https://monsterboard.onrender.com/twitter-login";
-        } catch (error) {
-            console.error("Twitter connection failed:", error);
+        });
+
+        // Check for Twitter handle in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const twitterHandle = urlParams.get("twitterHandle");
+
+        if (twitterHandle) {
+            document.getElementById("user-info").style.display = "block";
+            document.getElementById("twitter-handle").innerText = "@" + twitterHandle;
         }
-    }
-
-    async function updateUserRank() {
-        try {
-            const userRank = await contract.getUserRank(userAddress);
-            document.getElementById("rankDisplay").innerText = 
-                userRank > 0 ? `Your Rank: #${userRank}` : "You are not ranked yet.";
-        } catch (error) {
-            console.error("Error fetching user rank:", error);
-        }
-    }
-
-    async function getLeaderboard() {
-        try {
-            const leaderboard = await contract.getLeaderboard();
-            const leaderboardDiv = document.getElementById("leaderboard");
-            leaderboardDiv.innerHTML = "<h2>Leaderboard</h2>";
-            
-            leaderboard.forEach((entry, index) => {
-                leaderboardDiv.innerHTML += `<p>#${index + 1} ${entry.twitterHandle || entry.user} - ${entry.balance} MON</p>`;
-            });
-        } catch (error) {
-            console.error("Error fetching leaderboard:", error);
-        }
-    }
-
-    window.onload = async function () {
-        // Parse twitterHandle from query parameters
-        const params = new URLSearchParams(window.location.search);
-        if (params.has("twitterHandle")) {
-            twitterHandle = params.get("twitterHandle");  // Extract the twitterHandle
-            document.getElementById("rankDisplay").innerText = `Twitter: @${twitterHandle}`;  // Display the handle
-            
-            // Update the contract with the twitterHandle
-            try {
-                await contract.setTwitterHandle(twitterHandle);  // This is the contract method to store the twitter handle
-                console.log("Twitter handle set in contract successfully");
-                // Optionally, fetch updated leaderboard
-                await getLeaderboard();
-            } catch (error) {
-                console.error("Error setting Twitter handle in contract:", error);
-            }
-        }
-
-        // Fetch the leaderboard
-        await getLeaderboard();
-    };
-
-    document.getElementById("connectWalletButton").addEventListener("click", connectWallet);
-    document.getElementById("connectTwitterButton").addEventListener("click", connectTwitter);
-</script>
+    </script>
 </body>
 </html>
