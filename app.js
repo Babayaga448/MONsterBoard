@@ -21,7 +21,7 @@ const twitterClient = new TwitterApi({
 });
 
 // Blockchain setup
-const provider = new ethers.JsonRpcProvider('https://rpc.testnet.monad.xyz');
+const provider = new ethers.JsonRpcProvider('https://testnet-rpc.monad.xyz');
 const contractAddress = "0x1fA8743516535BD2966B2cEC12Cf0f82E3E5566d";
 const contractABI = [
 	{
