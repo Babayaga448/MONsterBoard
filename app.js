@@ -56,7 +56,7 @@ app.get('/twitter-callback', async (req, res) => {
         const twitterHandle = user.username;  // This is the Twitter handle
 
         // Redirect the user back to your frontend, passing the Twitter handle
-        res.redirect(`https://monsterboard.onrender.com/dashboard?twitterHandle=${twitterHandle}`);
+        res.redirect(`https://monsterboard.onrender.com/?twitterHandle=${twitterHandle}`);
     } catch (error) {
         console.error('Error during Twitter OAuth callback:', error);
         res.status(500).send('Error during Twitter authentication');
