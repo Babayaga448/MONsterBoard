@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 // Route to start Twitter OAuth flow
 app.get('/twitter-login', async (req, res) => {
     try {
-        const { url, oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink("http://localhost:3000/twitter-callback");
+        const { url, oauth_token, oauth_token_secret } = await twitterClient.generateAuthLink("https://monsterboard.onrender.com/twitter-callback");
         res.redirect(url);
     } catch (error) {
         console.error("Error generating Twitter auth link:", error);
@@ -52,7 +52,7 @@ app.get('/twitter-callback', async (req, res) => {
         const twitterHandle = user.username;  // This is the Twitter handle
 
         // Redirect the user back to your frontend, passing the Twitter handle
-        res.redirect(`http://localhost:3000?twitterHandle=${twitterHandle}`);
+        res.redirect(`https://monsterboard.onrender.com/dashboard?twitterHandle=${twitterHandle}`);
     } catch (error) {
         console.error('Error during Twitter OAuth callback:', error);
         res.status(500).send('Error during Twitter authentication');
@@ -61,5 +61,5 @@ app.get('/twitter-callback', async (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on https://monsterboard.onrender.com`);
 });
