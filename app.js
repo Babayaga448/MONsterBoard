@@ -254,7 +254,7 @@ app.get('/twitter-login', async (req, res) => {
         res.redirect(url);
     } catch (error) {
         console.error("Error generating Twitter auth link:", error);
-        res.status(500).send("Error starting Twitter authentication");
+        res.status(500).send("Error starting Twitter authentication: ${error.message}");
     }
 });
 
